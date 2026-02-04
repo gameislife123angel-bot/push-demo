@@ -12,7 +12,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
 
   <script>
-    // 🔹 Firebase config (YOUR REAL VALUES)
     const firebaseConfig = {
       apiKey: "AIzaSyBH7IBcB2DVRqkNNmER9y84BWkmyR0b3HU",
       authDomain: "github-push-demo.firebaseapp.com",
@@ -23,45 +22,46 @@
 
     firebase.initializeApp(firebaseConfig);
 
-    let messaging;
+    const messaging = firebase.messaging();
+    let swRegistration = null;
 
-    // 🔹 MANUAL Service Worker registration (CRITICAL FIX)
+    // ✅ MANUAL service worker registration
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker
         .register("/push-demo/firebase-messaging-sw.js")
         .then((registration) => {
           console.log("✅ Service Worker registered");
-
-          // 🔥 Tell Firebase to USE this service worker
-          messaging = firebase.messaging();
-          messaging.useServiceWorker(registration);
+          swRegistration = registration;
         })
-        .catch((error) => {
-          console.error("❌ Service Worker registration failed", error);
+        .catch((err) => {
+          console.error("❌ SW registration failed", err);
         });
     }
 
-    // 🔹 Request permission + get FCM token
+    // ✅ Request permission + explicitly use OUR service worker
     function requestPermission() {
       Notification.requestPermission().then((permission) => {
-        if (permission === "granted") {
-          messaging.getToken({
-            vapidKey: "BA8imDaZdZhl3yVAvu6qYrsx352s7r-x5b380ou1ONLjrS4hN0fGin3uRp4x4z6gqhGUZk_4PEodpLAZgENNoio"
-          }).then((token) => {
-            console.log("🔥 FCM Token:", token);
-            alert("Notification enabled! Check console.");
-          }).catch((err) => {
-            console.error("❌ Token error:", err);
-          });
-        } else {
-          alert("Notification permission denied");
+        if (permission !== "granted") {
+          alert("Permission denied");
+          return;
         }
+
+        messaging.getToken({
+          vapidKey: "BA8imDaZdZhl3yVAvu6qYrsx352s7r-x5b380ou1ONLjrS4hN0fGin3uRp4x4z6gqhGUZk_4PEodpLAZgENNoio",
+          serviceWorkerRegistration: swRegistration
+        })
+        .then((token) => {
+          console.log("🔥 FCM TOKEN:", token);
+          alert("Notifications enabled! Check console.");
+        })
+        .catch((err) => {
+          console.error("❌ Token error", err);
+        });
       });
     }
 
-    // 🔹 Foreground message handler
-    messaging?.onMessage((payload) => {
-      console.log("📩 Message received:", payload);
+    messaging.onMessage((payload) => {
+      console.log("📩 Foreground message:", payload);
     });
   </script>
 </body>
