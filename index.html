@@ -12,7 +12,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
 
   <script>
-    // 🔹 1. Firebase config (KEEP YOUR OWN VALUES)
+    // 🔹 Firebase config (YOUR REAL VALUES)
     const firebaseConfig = {
       apiKey: "AIzaSyBH7IBcB2DVRqkNNmER9y84BWkmyR0b3HU",
       authDomain: "github-push-demo.firebaseapp.com",
@@ -23,21 +23,25 @@
 
     firebase.initializeApp(firebaseConfig);
 
-    const messaging = firebase.messaging();
+    let messaging;
 
-    // 🔹 2. MANUAL service worker registration (IMPORTANT)
+    // 🔹 MANUAL Service Worker registration (CRITICAL FIX)
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker
         .register("/push-demo/firebase-messaging-sw.js")
         .then((registration) => {
-          console.log("✅ Service Worker registered:", registration);
+          console.log("✅ Service Worker registered");
+
+          // 🔥 Tell Firebase to USE this service worker
+          messaging = firebase.messaging();
+          messaging.useServiceWorker(registration);
         })
         .catch((error) => {
-          console.error("❌ Service Worker registration failed:", error);
+          console.error("❌ Service Worker registration failed", error);
         });
     }
 
-    // 🔹 3. Request permission + get token
+    // 🔹 Request permission + get FCM token
     function requestPermission() {
       Notification.requestPermission().then((permission) => {
         if (permission === "granted") {
@@ -46,8 +50,8 @@
           }).then((token) => {
             console.log("🔥 FCM Token:", token);
             alert("Notification enabled! Check console.");
-          }).catch(err => {
-            console.error("Token error:", err);
+          }).catch((err) => {
+            console.error("❌ Token error:", err);
           });
         } else {
           alert("Notification permission denied");
@@ -55,8 +59,8 @@
       });
     }
 
-    // 🔹 4. Foreground messages
-    messaging.onMessage((payload) => {
+    // 🔹 Foreground message handler
+    messaging?.onMessage((payload) => {
       console.log("📩 Message received:", payload);
     });
   </script>
