@@ -7,10 +7,12 @@
   <h2>GitHub Push Notification Demo</h2>
   <button onclick="requestPermission()">Enable Notifications</button>
 
+  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
 
   <script>
+    // 🔹 1. Firebase config (KEEP YOUR OWN VALUES)
     const firebaseConfig = {
       apiKey: "AIzaSyBH7IBcB2DVRqkNNmER9y84BWkmyR0b3HU",
       authDomain: "github-push-demo.firebaseapp.com",
@@ -23,21 +25,39 @@
 
     const messaging = firebase.messaging();
 
+    // 🔹 2. MANUAL service worker registration (IMPORTANT)
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("/push-demo/firebase-messaging-sw.js")
+        .then((registration) => {
+          console.log("✅ Service Worker registered:", registration);
+        })
+        .catch((error) => {
+          console.error("❌ Service Worker registration failed:", error);
+        });
+    }
+
+    // 🔹 3. Request permission + get token
     function requestPermission() {
-      Notification.requestPermission().then(permission => {
+      Notification.requestPermission().then((permission) => {
         if (permission === "granted") {
           messaging.getToken({
-            vapidKey: "YOUR_VAPID_KEY"
-          }).then(token => {
-            console.log("FCM Token:", token);
+            vapidKey: "BA8imDaZdZhl3yVAvu6qYrsx352s7r-x5b380ou1ONLjrS4hN0fGin3uRp4x4z6gqhGUZk_4PEodpLAZgENNoio"
+          }).then((token) => {
+            console.log("🔥 FCM Token:", token);
             alert("Notification enabled! Check console.");
+          }).catch(err => {
+            console.error("Token error:", err);
           });
+        } else {
+          alert("Notification permission denied");
         }
       });
     }
 
-    messaging.onMessage(payload => {
-      console.log("Message received:", payload);
+    // 🔹 4. Foreground messages
+    messaging.onMessage((payload) => {
+      console.log("📩 Message received:", payload);
     });
   </script>
 </body>
